@@ -40,6 +40,13 @@ interface LiveChatOverlayApi {
    * 数値でない・NaN・負数は無視する。
    */
   setZIndex(zIndex: number): void;
+  /**
+   * 現在、コメント表示のON/OFF設定がONになっているかどうかを返す。
+   * サイト固有スクリプト（sites/twitch.tsなど）が、OFF時には無駄な処理
+   * （Twitchのチャット欄自動開閉によるチャット接続の再初期化など）を
+   * スキップしたい場合に使う想定。
+   */
+  isEnabled(): boolean;
 }
 
 // window にぶら下げる公開名前空間の型を拡張しておく。
@@ -1011,5 +1018,6 @@ interface Window {
     setVideoElement,
     resetForNewStream,
     setZIndex,
+    isEnabled: () => currentEnabled,
   };
 })();

@@ -40,6 +40,21 @@
      * 通常モードでは一致する要素が存在せず、シアターモードONで出現する。
      */
     const THEATRE_MODE_SELECTOR = '[class*="channel-page__video-player--theatre-mode"]';
+    /** ネイティブチャット欄の開閉トグルボタンのセレクタ */
+    const CHAT_COLLAPSE_TOGGLE_SELECTOR = '[data-a-target="right-column__toggle-collapse-btn"]';
+    /**
+     * チャット欄が閉じている状態の時、開閉トグルボタンのaria-labelに含まれる文字列
+     * （実機で確認済み。「チャットを展開」＝クリックすると展開される＝現在は閉じている）。
+     */
+    const CHAT_COLLAPSED_ARIA_LABEL_SUBSTRING = "展開";
+    /**
+     * チャット欄を開いてからすぐ閉じ直すまでの待機時間（ミリ秒）。
+     * Twitchに新チャンネルのチャット接続を初期化させるための間隔。
+     * チラつきを抑えるため短くしているが、値が小さすぎると接続初期化が
+     * 間に合わない可能性がある（ユーザー体感を優先した値であり、
+     * 実機で効果が薄い場合は増やすことを検討する）。
+     */
+    const CHAT_REOPEN_CLOSE_DELAY_MS = 50;
     /**
      * 通常時のオーバーレイのz-index。Twitchのヘッダー（nav.top-nav、z-index: 1000）
      * より低くすることで、オーバーレイがヘッダーに被らないようにする（実機で確認済み）。
@@ -165,6 +180,50 @@
         }
     }
     /**
+     * ネイティブチャット欄が閉じているかどうかを判定する。
+     * 開閉トグルボタンが見つからない場合は判定不能なため、false（開いている扱い）
+     * を返し、呼び出し側で何もしないようにする（安全側に倒す）。
+     */
+    function isNativeChatCollapsed() {
+        const toggleButton = document.querySelector(CHAT_COLLAPSE_TOGGLE_SELECTOR);
+        if (!toggleButton) {
+            return false;
+        }
+        const ariaLabel = toggleButton.getAttribute("aria-label") ?? "";
+        return ariaLabel.includes(CHAT_COLLAPSED_ARIA_LABEL_SUBSTRING);
+    }
+    /**
+     * reinitializeCollapsedChat() の多重実行防止フラグ。
+     * 開く→閉じるの間（setTimeout待機中）に何らかの理由でchecckChannelChange()が
+     * 再度この関数を呼び出しても、開閉操作が二重に走らないようにする。
+     */
+    let isReinitializingChat = false;
+    /**
+     * チャット欄が閉じたままチャンネルが切り替わった場合、Twitch側が新チャンネルの
+     * チャット接続（DOM更新）を初期化しないことが実機で確認されている。
+     * 開閉トグルボタンを「開く→閉じる」と自動クリックすることでTwitchに接続を
+     * 初期化させ、最後にユーザーが元々選んでいた「閉じている」状態へ戻す。
+     * DOMが差し替わっている可能性があるため、クリックの都度ボタン要素を探し直す。
+     */
+    function reinitializeCollapsedChat() {
+        if (isReinitializingChat) {
+            return;
+        }
+        const openButton = document.querySelector(CHAT_COLLAPSE_TOGGLE_SELECTOR);
+        if (!openButton || !(openButton instanceof HTMLElement)) {
+            return;
+        }
+        isReinitializingChat = true;
+        openButton.click();
+        setTimeout(() => {
+            const closeButton = document.querySelector(CHAT_COLLAPSE_TOGGLE_SELECTOR);
+            if (closeButton instanceof HTMLElement) {
+                closeButton.click();
+            }
+            isReinitializingChat = false;
+        }, CHAT_REOPEN_CLOSE_DELAY_MS);
+    }
+    /**
      * location.pathname の変化を確認し、チャンネルが切り替わっていれば
      * オーバーレイの表示中コメントをクリアする。
      * Twitchは<video>要素が使い回されたままチャンネルだけが切り替わるケースがあるため、
@@ -176,6 +235,14 @@
         if (lastPathname !== null && pathname !== lastPathname) {
             if (typeof window.LiveChatOverlay?.resetForNewStream === "function") {
                 window.LiveChatOverlay.resetForNewStream();
+            }
+            // コメント表示自体がOFFの場合、Twitchのチャット接続を無理に再初期化させる
+            // 意味がないため何もしない（ユーザーがコメントを見るつもりがないのに
+            // チャット欄を自動で開閉させる必要はない）。
+            // チャット欄が閉じたままチャンネルが変わった場合はTwitchの接続初期化を促す
+            if (window.LiveChatOverlay?.isEnabled?.() !== false &&
+                isNativeChatCollapsed()) {
+                reinitializeCollapsedChat();
             }
         }
         lastPathname = pathname;

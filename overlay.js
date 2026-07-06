@@ -855,5 +855,6 @@
         setVideoElement,
         resetForNewStream,
         setZIndex,
+        isEnabled: () => currentEnabled,
     };
 })();
