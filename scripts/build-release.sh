@@ -17,8 +17,9 @@ npx tsc --removeComments --outDir "$RELEASE_TMP_DIR"
 
 echo "2/3 dist/ に必要なファイルを集めています..."
 rm -rf dist
-mkdir -p dist/sites
+mkdir -p dist/sites dist/icons
 cp manifest.json popup.html dist/
+cp icons/icon16.png icons/icon48.png icons/icon128.png dist/icons/
 cp "$RELEASE_TMP_DIR/overlay.js" "$RELEASE_TMP_DIR/popup.js" dist/
 cp "$RELEASE_TMP_DIR/sites/youtube.js" "$RELEASE_TMP_DIR/sites/twitch.js" dist/sites/
 
