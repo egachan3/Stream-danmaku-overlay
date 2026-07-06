@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "description": "YouTube Live・Twitchのライブチャットを配信画面上にオーバーレイ表示するChrome拡張機能",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "build:release": "bash scripts/build-release.sh"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
