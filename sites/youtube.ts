@@ -296,6 +296,19 @@
     const observer = new MutationObserver(() => {
       syncVideoElement();
       syncHiddenChatFrame();
+      // DOM変化（レイアウトシフトの可能性がある兆候）をトリガーに座標を
+      // 再計算する。ResizeObserverは動画要素自身のサイズ変化にしか反応せず、
+      // 周囲のコンテンツ（関連動画欄・広告等）の読み込みによる位置ずれを
+      // 検知できないため、常時稼働しているこのMutationObserverのコールバックを
+      // 座標再計算のトリガーとしても活用する
+      // （scheduleVideoChangeRecalculation()による時間ベースの再計算と併用）。
+      // matches が https://www.youtube.com/* に拡大されたことで、このObserver
+      // 自体はライブ配信と無関係なページ（トップページ等）でも常時稼働している
+      // ため、ライブチャット枠が存在するページに限定して呼び出す（無駄な
+      // rAF予約サイクルを避けるため）。
+      if (document.querySelector(LIVE_CHAT_FRAME_SELECTOR)) {
+        window.LiveChatOverlay?.recalculatePosition?.();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
