@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Stream Danmaku Overlay",
   "description": "YouTube Live・Twitchのライブチャットを配信画面上に弾幕風にオーバーレイ表示します。",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
