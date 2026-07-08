@@ -347,6 +347,15 @@
         });
     }
     /**
+     * DOM変化（レイアウトシフトの可能性がある兆候）をトリガーに座標を再計算する
+     * 公開API。既存のscheduleUpdateOverlayPosition()（scroll用に用意された、
+     * requestAnimationFrameで1フレームにつき1回に間引く仕組み）をそのまま
+     * 再利用することで、頻繁に呼ばれても負荷が増えないようにしている。
+     */
+    function recalculatePosition() {
+        scheduleUpdateOverlayPosition();
+    }
+    /**
      * 動画要素を基準にオーバーレイの位置決めを開始する。
      * ResizeObserver で動画要素のサイズ変化（ウィンドウリサイズ・全画面切り替え・
      * レイアウト変更等）を監視し、変化のたびに座標を再計算する。
@@ -396,8 +405,11 @@
         };
         videoChangeRafId = requestAnimationFrame(rafStep);
         // rAFループより長いスパンで発生するレイアウトシフト（画像・広告等の
-        // 読み込み完了タイミング）にも追従できるよう、数百ms後にも再計算する
-        const DELAYS_MS = [100, 300, 500, 1000];
+        // 読み込み完了タイミング）にも追従できるよう、数百ms後にも再計算する。
+        // トップページ→ライブ配信のような、読み込むコンテンツが多くレイアウトの
+        // 確定が遅いページ遷移にも対応するため、1500/2000/3000msの再計算も
+        // 追加し、再計算を試みる期間を延長した。
+        const DELAYS_MS = [100, 300, 500, 1000, 1500, 2000, 3000];
         for (const delay of DELAYS_MS) {
             const timeoutId = window.setTimeout(() => {
                 updateOverlayPosition();
@@ -856,5 +868,6 @@
         resetForNewStream,
         setZIndex,
         isEnabled: () => currentEnabled,
+        recalculatePosition,
     };
 })();
