@@ -177,6 +177,26 @@
      */
     function syncVideoElement(): void {
       if (!document.querySelector(LIVE_CHAT_FRAME_SELECTOR)) {
+        // ライブ配信視聴後に通常動画へ遷移した場合への対応。
+        // ytd-live-chat-frame が存在しないページに来たとき、以前ライブ配信の
+        // video要素を保持していれば（lastVideoElがnullでなければ）、
+        // オーバーレイに残った古いコメント表示・タイマー・リスナーを
+        // 確実に片付ける。もともとライブ配信を見ていなければ何もしない。
+        if (lastVideoEl) {
+          if (typeof window.LiveChatOverlay?.resetForNewStream === "function") {
+            window.LiveChatOverlay.resetForNewStream();
+          }
+          lastVideoEl = null;
+          stopVideoProgressSync();
+          removeVideoEventListeners?.();
+          removeVideoEventListeners = null;
+          // 隠しiframe（ネイティブのチャット欄が閉じられても更新を続けるための
+          // 自前iframe）も、ライブ配信を離れた時点で不要になるため破棄する。
+          // 残したままにすると、次にライブ配信へ戻るまでDOM上にリークし続ける。
+          hiddenChatFrame?.remove();
+          hiddenChatFrame = null;
+          lastChatUrl = null;
+        }
         return;
       }
       const video = document.querySelector("video");
