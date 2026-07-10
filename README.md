@@ -54,7 +54,7 @@ Settings are stored only on your device (chrome.storage.local); nothing is sent 
   </tr>
 </table>
 
-スクリーンショットの配信画面は以下より引用させていただいてます。
+スクリーンショットの配信画面はGON様より引用させていただいてます。
 
 - https://www.twitch.tv/gon_vl
 - https://www.twitch.tv/gon_vl/clip/FuriousAlertTofuSoBayed-zvGWQo2eSK3wJsDi
